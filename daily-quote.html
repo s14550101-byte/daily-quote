@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="每日一句">
+<meta name="theme-color" content="#0f0f1a">
+<title>每日一句</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f1a;
+    --surface: #1a1a2e;
+    --surface2: #22223a;
+    --accent-pos: #f4c06f;
+    --accent-neg: #8b9cf4;
+    --text: #e8e8f0;
+    --text-dim: #7878a0;
+    --border: rgba(255,255,255,0.08);
+    --glow-pos: rgba(244,192,111,0.15);
+    --glow-neg: rgba(139,156,244,0.15);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body {
+    min-height:100dvh;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Noto Sans TC',sans-serif;
+    overflow-x:hidden;
+  }
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(139,156,244,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 90%, rgba(244,192,111,0.06) 0%, transparent 60%);
+    pointer-events:none; z-index:0;
+  }
+  .wrapper {
+    position:relative; z-index:1;
+    max-width:480px; margin:0 auto;
+    padding:0 20px 48px;
+    min-height:100dvh;
+    display:flex; flex-direction:column;
+  }
+  header { padding:48px 0 28px; text-align:center; }
+  .date-label { font-size:11px; letter-spacing:0.25em; color:var(--text-dim); text-transform:uppercase; margin-bottom:6px; }
+  header h1 { font-family:'Noto Serif TC',serif; font-size:22px; font-weight:700; letter-spacing:0.15em; }
+
+  .daily-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:20px; padding:36px 28px 28px;
+    position:relative; overflow:hidden; margin-bottom:14px;
+    transition:box-shadow 0.5s;
+  }
+  .daily-card.pos { box-shadow:0 0 48px var(--glow-pos); }
+  .daily-card.neg { box-shadow:0 0 48px var(--glow-neg); }
+  .daily-card::before {
+    content:''; position:absolute;
+    top:-30px; right:-30px; width:130px; height:130px; border-radius:50%;
+    transition:background 0.5s;
+  }
+  .daily-card.pos::before { background:radial-gradient(circle,rgba(244,192,111,0.12),transparent 70%); }
+  .daily-card.neg::before { background:radial-gradient(circle,rgba(139,156,244,0.12),transparent 70%); }
+
+  .card-tag {
+    font-size:10px; letter-spacing:0.2em; font-weight:500;
+    padding:3px 10px; border-radius:20px; display:inline-block;
+    margin-bottom:20px; transition:all 0.4s;
+  }
+  .card-tag.pos { background:rgba(244,192,111,0.15); color:var(--accent-pos); }
+  .card-tag.neg { background:rgba(139,156,244,0.15); color:var(--accent-neg); }
+  .card-tag.custom { background:rgba(120,200,160,0.15); color:#78c8a0; }
+
+  .today-label {
+    font-size:11px; letter-spacing:0.18em; color:var(--text-dim);
+    margin-bottom:16px; display:flex; align-items:center; gap:8px;
+  }
+  .today-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  .quote-text {
+    font-family:'Noto Serif TC',serif;
+    font-size:clamp(18px,5vw,22px); line-height:1.85;
+    font-weight:400; letter-spacing:0.05em;
+    animation:fadeUp 0.5s ease both;
+  }
+  .quote-author {
+    margin-top:18px; font-size:12px; color:var(--text-dim);
+    text-align:right; font-style:italic;
+    animation:fadeUp 0.5s 0.1s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(10px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  .btn-row { display:flex; gap:10px; margin-bottom:14px; }
+  .btn {
+    flex:1; border:none; border-radius:12px; padding:14px 10px;
+    font-family:'Noto Sans TC',sans-serif; font-size:13px; font-weight:500;
+    cursor:pointer; transition:all 0.2s; letter-spacing:0.05em;
+  }
+  .btn-rand { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+  .btn-rand:active { transform:scale(0.97); }
+  .btn-add { background:rgba(244,192,111,0.12); color:var(--accent-pos); border:1px solid rgba(244,192,111,0.25); }
+  .btn-add:active { transform:scale(0.97); }
+
+  .rand-card {
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:16px; padding:24px 22px; margin-bottom:20px;
+    display:none;
+  }
+  .rand-card.show { display:block; animation:fadeUp 0.4s ease; }
+  .rand-card .quote-text { font-size:clamp(15px,4vw,18px); }
+  .rand-header { font-size:10px; letter-spacing:0.2em; color:var(--text-dim); margin-bottom:14px; }
+
+  .section-head {
+    font-size:11px; letter-spacing:0.2em; color:var(--text-dim);
+    margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--border);
+  }
+  .user-list { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+  .user-item {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; padding:16px 14px 16px 18px;
+    display:flex; align-items:flex-start; gap:12px;
+    animation:fadeUp 0.3s ease;
+  }
+  .user-item-text {
+    flex:1; font-family:'Noto Serif TC',serif;
+    font-size:15px; line-height:1.7; word-break:break-all;
+  }
+  .btn-del {
+    background:none; border:none; color:var(--text-dim);
+    cursor:pointer; font-size:20px; padding:0 4px;
+    border-radius:6px; transition:color 0.2s,background 0.2s; flex-shrink:0; line-height:1;
+  }
+  .btn-del:active { color:#f06f6f; background:rgba(240,111,111,0.1); }
+  .empty-msg { text-align:center; color:var(--text-dim); font-size:13px; padding:24px 0; letter-spacing:0.05em; }
+
+  .add-form {
+    display:none; background:var(--surface); border:1px solid var(--border);
+    border-radius:16px; padding:20px; margin-bottom:20px;
+  }
+  .add-form.show { display:block; animation:fadeUp 0.3s ease; }
+  .add-form textarea {
+    width:100%; background:var(--surface2); border:1px solid var(--border);
+    border-radius:10px; color:var(--text); font-family:'Noto Serif TC',serif;
+    font-size:15px; line-height:1.7; padding:12px 14px; resize:none; outline:none;
+    transition:border-color 0.2s; margin-bottom:12px;
+  }
+  .add-form textarea::placeholder { color:var(--text-dim); }
+  .add-form textarea:focus { border-color:rgba(244,192,111,0.4); }
+  .form-row { display:flex; gap:8px; }
+  .btn-cancel {
+    background:var(--surface2); color:var(--text-dim); border:1px solid var(--border);
+    border-radius:10px; padding:11px 18px;
+    font-family:'Noto Sans TC',sans-serif; font-size:13px; cursor:pointer;
+  }
+  .btn-save {
+    flex:1; background:rgba(244,192,111,0.15); color:var(--accent-pos);
+    border:1px solid rgba(244,192,111,0.3); border-radius:10px; padding:11px;
+    font-family:'Noto Sans TC',sans-serif; font-size:13px; font-weight:500;
+    cursor:pointer; transition:all 0.2s; letter-spacing:0.05em;
+  }
+  .btn-save:active { transform:scale(0.97); }
+  footer { margin-top:auto; padding-top:28px; text-align:center; font-size:11px; color:rgba(120,120,160,0.35); letter-spacing:0.1em; }
+  @keyframes shake {
+    0%,100% { transform:translateX(0); }
+    25%      { transform:translateX(-6px); }
+    75%      { transform:translateX(6px); }
+  }
+  .shake { animation:shake 0.3s ease; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <div class="date-label" id="dateLabel"></div>
+    <h1>每日一句</h1>
+  </header>
+
+  <div class="daily-card" id="dailyCard">
+    <div class="today-label">今日語錄</div>
+    <div class="card-tag" id="cardTag"></div>
+    <div class="quote-text" id="quoteText"></div>
+    <div class="quote-author" id="quoteAuthor"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-rand" onclick="drawRandom()">🎲 再抽一句</button>
+    <button class="btn btn-add" onclick="toggleAddForm()">✦ 新增語錄</button>
+  </div>
+
+  <div class="rand-card" id="randCard">
+    <div class="rand-header">隨機抽取</div>
+    <div class="card-tag" id="randTag"></div>
+    <div class="quote-text" id="randText"></div>
+    <div class="quote-author" id="randAuthor"></div>
+  </div>
+
+  <div class="add-form" id="addForm">
+    <textarea id="newQuote" rows="3" placeholder="輸入你的語錄…" maxlength="200"></textarea>
+    <div class="form-row">
+      <button class="btn-cancel" onclick="toggleAddForm()">取消</button>
+      <button class="btn-save" onclick="saveQuote()">儲存語錄</button>
+    </div>
+  </div>
+
+  <div id="userSection">
+    <div class="section-head">我的語錄庫</div>
+    <div class="user-list" id="userList"></div>
+  </div>
+
+  <footer>每天一句，積累能量</footer>
+</div>
+
+<script>
+const BUILT_IN = [
+  { text:"你現在的努力，是在為未來的自己鋪路。", vibe:"pos" },
+  { text:"每一次跌倒，都是重新認識自己的機會。", vibe:"pos" },
+  { text:"不必完美，只要真實。", vibe:"pos" },
+  { text:"慢慢來，比較快。", vibe:"pos" },
+  { text:"你值得你給自己的溫柔。", vibe:"pos" },
+  { text:"改變從接受開始，力量從行動中來。", vibe:"pos" },
+  { text:"今天比昨天多做了一件事，就是進步。", vibe:"pos" },
+  { text:"把注意力放在你能控制的事情上。", vibe:"pos" },
+  { text:"不是所有努力都有回報，但不努力一定什麼都沒有。", vibe:"neg" },
+  { text:"有些人離開你，是你人生最好的事。", vibe:"neg" },
+  { text:"累了就休息，不是所有問題今天都必須解決。", vibe:"neg" },
+  { text:"你無法讓所有人滿意，那是他們的工作，不是你的。", vibe:"neg" },
+  { text:"人生沒有捷徑，但有些彎路走了其實是對的。", vibe:"neg" },
+  { text:"接受無能為力，是成熟的開始，不是放棄。", vibe:"neg" },
+  { text:"有時候沉默比解釋更有力量。", vibe:"neg" },
+  { text:"不是每段關係都值得你全力維持。", vibe:"neg" },
+];
+
+const VIBE_LABEL = { pos:"正能量", neg:"現實語錄", custom:"我的語錄" };
+
+function loadUser() {
+  try { return JSON.parse(localStorage.getItem('dq_user')||'[]'); } catch { return []; }
+}
+function saveUser(a) { localStorage.setItem('dq_user', JSON.stringify(a)); }
+
+function allQuotes() {
+  return [...BUILT_IN, ...loadUser().map(t=>({text:t, vibe:"custom"}))];
+}
+
+function getTodayIdx() {
+  const stored = localStorage.getItem('dq_today');
+  const today  = new Date().toDateString();
+  if (stored) {
+    const {date, idx} = JSON.parse(stored);
+    if (date === today) return idx;
+  }
+  const pool = allQuotes();
+  const idx  = Math.floor(Math.random() * pool.length);
+  localStorage.setItem('dq_today', JSON.stringify({date:today, idx}));
+  return idx;
+}
+
+function renderDate() {
+  const d = new Date();
+  const days=['日','一','二','三','四','五','六'];
+  document.getElementById('dateLabel').textContent =
+    `${d.getMonth()+1} 月 ${d.getDate()} 日　星期${days[d.getDay()]}`;
+}
+
+function renderDaily() {
+  const pool = allQuotes();
+  let idx = getTodayIdx();
+  if (idx >= pool.length) { idx = 0; }
+  const q = pool[idx];
+  const card = document.getElementById('dailyCard');
+  const vibe = q.vibe === 'custom' ? 'pos' : q.vibe;
+  card.className = `daily-card ${vibe}`;
+  const tag = document.getElementById('cardTag');
+  tag.className = `card-tag ${q.vibe}`;
+  tag.textContent = VIBE_LABEL[q.vibe];
+  document.getElementById('quoteText').textContent = q.text;
+  document.getElementById('quoteAuthor').textContent = q.vibe==='custom' ? '— 我的收藏' : '';
+}
+
+function drawRandom() {
+  const pool = allQuotes();
+  const idx  = Math.floor(Math.random() * pool.length);
+  const q    = pool[idx];
+  const card = document.getElementById('randCard');
+  card.classList.add('show');
+  const tag = document.getElementById('randTag');
+  tag.className = `card-tag ${q.vibe}`;
+  tag.textContent = VIBE_LABEL[q.vibe];
+  const rt = document.getElementById('randText');
+  rt.style.animation='none'; void rt.offsetWidth; rt.style.animation='';
+  rt.textContent = q.text;
+  document.getElementById('randAuthor').textContent = q.vibe==='custom' ? '— 我的收藏' : '';
+  card.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function toggleAddForm() {
+  const f = document.getElementById('addForm');
+  const on = f.classList.toggle('show');
+  if (on) {
+    document.getElementById('newQuote').value='';
+    setTimeout(()=>document.getElementById('newQuote').focus(), 100);
+  }
+}
+
+function saveQuote() {
+  const val = document.getElementById('newQuote').value.trim();
+  if (!val) {
+    const ta = document.getElementById('newQuote');
+    ta.classList.add('shake');
+    setTimeout(()=>ta.classList.remove('shake'), 350);
+    return;
+  }
+  const arr = loadUser();
+  arr.unshift(val);
+  saveUser(arr);
+  toggleAddForm();
+  renderUserList();
+}
+
+function deleteQuote(i) {
+  const arr = loadUser();
+  arr.splice(i,1);
+  saveUser(arr);
+  renderUserList();
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderUserList() {
+  const arr  = loadUser();
+  const list = document.getElementById('userList');
+  if (!arr.length) {
+    list.innerHTML='<div class="empty-msg">還沒有自訂語錄<br>點「新增語錄」加入你的想法</div>';
+    return;
+  }
+  list.innerHTML = arr.map((t,i)=>`
+    <div class="user-item">
+      <div class="user-item-text">${esc(t)}</div>
+      <button class="btn-del" onclick="deleteQuote(${i})" title="刪除">×</button>
+    </div>
+  `).join('');
+}
+
+renderDate();
+renderDaily();
+renderUserList();
+</script>
+</body>
+</html>
